@@ -2,6 +2,7 @@ module Slice
 
 open LowStar.BufferOps
 open FStar.HyperStack.ST
+open LowStar.Printf
 
 module B = LowStar.Buffer
 module U32 = FStar.UInt32
