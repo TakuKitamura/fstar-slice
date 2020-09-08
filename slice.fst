@@ -14,15 +14,13 @@ val slice_logic:
   sliced_length: U32.t ->
   from: U32.t ->
   to: U32.t ->
-  ST (sliced_length: U32.t) (requires fun h0 -> 
+  Stack (sliced_length: unit) (requires fun h0 -> 
     B.live h0 original /\
     B.live h0 sliced /\
     B.length original = U32.v original_length /\ 
     B.length sliced = U32.v original_length 
   )
-  (ensures fun _ r h1 -> 
-    (if (from = to) then U32.v sliced_length = U32.v r else true)
-  )
+  (ensures fun _ _ _ -> true)
 let rec slice_logic original original_length sliced sliced_length from to =
   if U32.(
       from <^ original_length && // original.(from)
@@ -38,10 +36,8 @@ let rec slice_logic original original_length sliced sliced_length from to =
       let next_from_index: U32.t = U32.(from +^ 1ul) in
       slice_logic original original_length sliced sliced_length next_from_index to 
     )
-  else if (from = to) then
-    sliced_length
   else
-    0ul
+    ()
 
 val slice:
   original: B.buffer U32.t ->
@@ -49,16 +45,20 @@ val slice:
   sliced: B.buffer U32.t ->
   from: U32.t ->
   to : U32.t ->
-  ST (sliced_length: U32.t) (requires fun h0 -> 
+  Stack (sliced_length: U32.t) (requires fun h0 -> 
     B.live h0 original /\
     B.live h0 sliced /\
     B.length original = U32.v original_length /\
     B.length sliced = U32.v original_length
   )
-  (ensures fun h0 r h1 -> true)
+  (ensures fun h0 sliced_length h1 -> 
+    U32.v sliced_length <= B.length sliced /\
+    B.live h1 sliced
+  )
 let slice original original_length sliced from to =
-  let sliced_length: U32.t = if U32.(from <^ to) then U32.(to -^ from) else 0ul in
-  if (sliced_length = 0ul) then
-    0ul
+  let sliced_length: U32.t = if U32.(from <^ to) then U32.(to -^ from) else 0ul in 
+    slice_logic original original_length sliced sliced_length from to;
+  if (U32.(sliced_length <=^ original_length)) then
+    sliced_length
   else
-    slice_logic original original_length sliced sliced_length from to
+    0ul
