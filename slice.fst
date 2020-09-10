@@ -8,57 +8,57 @@ module B = LowStar.Buffer
 module U32 = FStar.UInt32
 
 val slice_logic: 
-  original: B.buffer U32.t ->
-  original_length: U32.t ->
+  array: B.buffer U32.t ->
+  array_length: U32.t ->
   sliced: B.buffer U32.t ->
   sliced_length: U32.t ->
-  from: U32.t ->
-  to: U32.t ->
+  start: U32.t ->
+  stop: U32.t ->
   Stack (sliced_length: unit) (requires fun h0 -> 
-    B.live h0 original /\
+    B.live h0 array /\
     B.live h0 sliced /\
-    B.length original = U32.v original_length /\ 
-    B.length sliced = U32.v original_length 
+    B.length array = U32.v array_length /\ 
+    B.length sliced = U32.v array_length 
   )
   (ensures fun _ _ _ -> true)
-let rec slice_logic original original_length sliced sliced_length from to =
+let rec slice_logic array array_length sliced sliced_length start stop =
   if U32.(
-      from <^ original_length && // original.(from)
-      to >=^ sliced_length && // to -^ sliced_length >= 0
-      from >=^ to -^ sliced_length && // fixed_first_from
-      to >^ from // sliced.(sliced_index)
+      start <^ array_length && // array.(start)
+      stop >=^ sliced_length && // stop -^ sliced_length >= 0
+      start >=^ stop -^ sliced_length && // fixed_first_start
+      stop >^ start // sliced.(sliced_index)
     ) then
     ( 
-      let original_el: U32.t = original.(from) in
-      let fixed_first_from = U32.(to -^ sliced_length) in
-      let sliced_index: U32.t = U32.(from -^ fixed_first_from) in
-      sliced.(sliced_index) <- original_el;
-      let next_from_index: U32.t = U32.(from +^ 1ul) in
-      slice_logic original original_length sliced sliced_length next_from_index to 
+      let array_el: U32.t = array.(start) in
+      let fixed_first_start = U32.(stop -^ sliced_length) in
+      let sliced_index: U32.t = U32.(start -^ fixed_first_start) in
+      sliced.(sliced_index) <- array_el;
+      let next_start_index: U32.t = U32.(start +^ 1ul) in
+      slice_logic array array_length sliced sliced_length next_start_index stop 
     )
   else
     ()
 
 val slice:
-  original: B.buffer U32.t ->
-  original_length: U32.t ->
+  array: B.buffer U32.t ->
+  array_length: U32.t ->
   sliced: B.buffer U32.t ->
-  from: U32.t ->
-  to : U32.t ->
+  start: U32.t ->
+  stop : U32.t ->
   Stack (sliced_length: U32.t) (requires fun h0 -> 
-    B.live h0 original /\
+    B.live h0 array /\
     B.live h0 sliced /\
-    B.length original = U32.v original_length /\
-    B.length sliced = U32.v original_length
+    B.length array = U32.v array_length /\
+    B.length sliced = U32.v array_length
   )
   (ensures fun h0 sliced_length h1 -> 
     U32.v sliced_length <= B.length sliced /\
     B.live h1 sliced
   )
-let slice original original_length sliced from to =
-  let sliced_length: U32.t = if U32.(from <^ to) then U32.(to -^ from) else 0ul in 
-    slice_logic original original_length sliced sliced_length from to;
-  if (U32.(sliced_length <=^ original_length)) then
+let slice array array_length sliced start stop =
+  let sliced_length: U32.t = if U32.(start <^ stop) then U32.(stop -^ start) else 0ul in 
+    slice_logic array array_length sliced sliced_length start stop;
+  if (U32.(sliced_length <=^ array_length)) then
     sliced_length
   else
     0ul
