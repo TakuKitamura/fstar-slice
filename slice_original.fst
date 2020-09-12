@@ -32,6 +32,8 @@ let rec slice_logic array array_length sliced sliced_length start stop =
     ) then
     ( 
       // 配列スライス実装部
+      // スライス元配列から一つずつ, startからendの範囲で取り出し
+      // スライス結果用の配列に格納していく
       let array_el: U32.t = array.(start) in
       let fixed_first_start = U32.(stop -^ sliced_length) in
       let sliced_index: U32.t = U32.(start -^ fixed_first_start) in
