@@ -22,5 +22,6 @@ int main() {
   print_slice(array, array_length, 0, 5);
   print_slice(array, array_length, 2, 4);
   print_slice(array, array_length, 5, 0);
+  print_slice(array, array_length, 0, 6);
   return 0;
 }
